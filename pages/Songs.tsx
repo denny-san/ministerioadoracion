@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { AppView, User, Song, AppNotification } from '../types';
+import { AppView, User, Song, AppNotification, TeamMember } from '../types';
 import { notifyLeaderAction } from '../utils/notifications';
 
 interface SongsProps {
@@ -15,6 +15,7 @@ interface SongsProps {
   onUpdateSong: (song: Song) => void;
   onDeleteSong: (id: string) => void;
   members: TeamMember[];
+  onLogout?: () => void;
 }
 
 const Songs: React.FC<SongsProps> = ({
@@ -27,7 +28,8 @@ const Songs: React.FC<SongsProps> = ({
   onAddSong,
   onUpdateSong,
   onDeleteSong,
-  members
+  members,
+  onLogout
 }) => {
   const isWorshipLeader = user?.username === '@Solemny0109' || user?.role === 'Leader';
 
@@ -96,6 +98,7 @@ const Songs: React.FC<SongsProps> = ({
       title="Repertorio de Canciones"
       notifications={notifications}
       onMarkRead={onMarkNotificationsAsRead}
+      onLogout={onLogout}
     >
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-1">
@@ -276,7 +279,29 @@ const Songs: React.FC<SongsProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Músicos Asignados</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Músicos Asignados</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allMusicians = members.filter(m => m.role === 'Musician').map(m => m.username);
+                        setFormData({ ...formData, assignedMusicians: allMusicians });
+                      }}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      Todos
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedMusicians: [] })}
+                      className="text-[10px] font-bold text-slate-400 hover:text-slate-600 hover:underline"
+                    >
+                      Ninguno
+                    </button>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-slate-100 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-800/30">
                   {members.filter(m => m.role === 'Musician').map(m => (
                     <button
@@ -288,7 +313,7 @@ const Songs: React.FC<SongsProps> = ({
                           : [...current, m.username];
                         setFormData({ ...formData, assignedMusicians: updated });
                       }}
-                      className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${(formData.assignedMusicians || []).includes(m.id)
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${(formData.assignedMusicians || []).includes(m.username)
                         ? 'bg-primary text-white shadow-sm'
                         : 'bg-white dark:bg-gray-800 text-slate-500 border border-slate-200 dark:border-gray-700'
                         }`}

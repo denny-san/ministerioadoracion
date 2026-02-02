@@ -13,7 +13,7 @@ import { requestNotificationPermission } from './utils/notifications';
 import { AppNotification, Song, MinistryNotice, MinistryEvent } from './types';
 
 // Firebase Imports
-import { db, COLLECTIONS, subscribeToCollection, requestPushPermission } from './firebase';
+import { db, COLLECTIONS, subscribeToCollection, requestPushPermission, onMessageListener } from './firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 const App: React.FC = () => {
@@ -202,9 +202,38 @@ const App: React.FC = () => {
   }, [currentView]);
 
   useEffect(() => {
-    requestNotificationPermission();
-    requestPushPermission();
-  }, []);
+    // Request permission and get token
+    const initNotifications = async () => {
+      const token = await requestPushPermission();
+      if (token && user) {
+        // Save token to user profile if it's new
+        if (user.fcmToken !== token) {
+          console.log("Saving new FCM token for user:", user.username);
+          try {
+            await updateDoc(doc(db, COLLECTIONS.USERS, user.id), { fcmToken: token });
+          } catch (e) {
+            console.error("Error saving FCM token:", e);
+          }
+        }
+      }
+    };
+
+    if (user) {
+      initNotifications();
+    }
+
+    // Foreground listener
+    const unsubscribe = onMessageListener().then(payload => {
+      // @ts-ignore
+      const { title, body } = payload.notification;
+      addAppNotification('notice', title, body);
+      new Notification(title, { body, icon: '/vite.svg' });
+    });
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [user]);
 
   const addAppNotification = async (type: 'song' | 'notice' | 'event', title: string, message: string) => {
     const newNotification = {
@@ -291,7 +320,7 @@ const App: React.FC = () => {
 
   const handleLogin = (userData: User) => {
     setUser(userData);
-    setCurrentView(userData.role === 'Musician' ? AppView.MUSICIAN_VIEW : AppView.DASHBOARD);
+    setCurrentView(userData.role === 'Musician' ? AppView.SONGS : AppView.DASHBOARD);
   };
 
   const handleLogout = () => {
@@ -299,9 +328,39 @@ const App: React.FC = () => {
     setCurrentView(AppView.LOGIN);
   };
 
-  const handleUpdateUser = (updatedUser: User) => {
+  const handleUpdateUser = async (updatedUser: User) => {
     setUser(updatedUser);
-    // In a full cloud app, we'd update doc(db, 'users', updatedUser.id)
+
+    // 1. Update USER record (for login/profile)
+    try {
+      await updateDoc(doc(db, COLLECTIONS.USERS, updatedUser.id), {
+        ...updatedUser,
+        timestamp: serverTimestamp() // Update timestamp to prevent overwriting by seed logic
+      });
+      console.log("User profile updated in Firestore");
+    } catch (e) {
+      console.error("Error updating user profile:", e);
+    }
+
+    // 2. Update MEMBER record (for public team view)
+    // Find member by matching username or name
+    const memberToUpdate = members.find(m =>
+      m.username === updatedUser.username ||
+      m.name === updatedUser.name
+    );
+
+    if (memberToUpdate) {
+      try {
+        await updateDoc(doc(db, COLLECTIONS.MEMBERS, memberToUpdate.id), {
+          name: updatedUser.name,
+          instrument: updatedUser.instrument,
+          avatar: updatedUser.avatar
+        });
+        console.log("Member profile synced in Firestore");
+      } catch (e) {
+        console.error("Error syncing member profile:", e);
+      }
+    }
   };
 
   const handleUpdateMembers = (updatedMembers: TeamMember[]) => {
@@ -362,6 +421,7 @@ const App: React.FC = () => {
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onAddNotification={addAppNotification}
+          onLogout={handleLogout}
         />;
       case AppView.SONGS:
         return <Songs
@@ -375,6 +435,7 @@ const App: React.FC = () => {
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onAddNotification={addAppNotification}
+          onLogout={handleLogout}
         />;
       case AppView.TEAM:
         return <Team
@@ -384,6 +445,7 @@ const App: React.FC = () => {
           onUpdateMembers={handleUpdateMembers}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
+          onLogout={handleLogout}
         />;
       case AppView.MUSICIAN_VIEW:
         return <MusicianView
@@ -395,6 +457,7 @@ const App: React.FC = () => {
           onMarkNotificationsAsRead={markNotificationsAsRead}
           songs={songs}
           notices={notices}
+          onLogout={handleLogout}
         />;
       case AppView.NOTICES:
         return <Notices
@@ -407,6 +470,7 @@ const App: React.FC = () => {
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onAddNotification={addAppNotification}
+          onLogout={handleLogout}
         />;
       case AppView.PROFILE:
         return <Profile
@@ -415,6 +479,7 @@ const App: React.FC = () => {
           onUpdateUser={handleUpdateUser}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
+          onLogout={handleLogout}
         />;
       default:
         return <Dashboard

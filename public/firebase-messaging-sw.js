@@ -1,10 +1,7 @@
+importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
-// Import and configure the Firebase SDK
-// These scripts are made available when the app is served or deployed on Firebase Hosting
-// If you are using another hosting provider, you might need to import them from a CDN
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
-
+// Initialize the Firebase app in the service worker by passing in the messagingSenderId.
 firebase.initializeApp({
     apiKey: "AIzaSyCe29S6ZV7xvvTgR8uzqZewreFFOom7ZwM",
     authDomain: "youth-ministry-fe91a.firebaseapp.com",
@@ -15,15 +12,18 @@ firebase.initializeApp({
     measurementId: "G-VBHQPK3Z00"
 });
 
+// Retrieve an instance of Firebase Messaging so that it can handle background
+// messages.
 const messaging = firebase.messaging();
 
-// Handle background messages
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
+    // Customize notification here
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/favicon.ico'
+        icon: '/vite.svg', // Verify if this icon exists, fallback to default
+        badge: '/vite.svg'
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);

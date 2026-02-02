@@ -97,6 +97,78 @@ const MusicianView: React.FC<MusicianViewProps> = ({
         </div>
       </div>
 
+      {/* Musical Notices Section */}
+      {notices.filter(n => n.category === 'Music Team').length > 0 && (
+        <div className="mt-8 mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-emerald-600">campaign</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Avisos Musicales</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Actualizaciones del equipo de música</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate(AppView.NOTICES)}
+              className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            >
+              Ver Todos
+              <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+          </div>
+
+          <div className="grid gap-4">
+            {notices
+              .filter(n => n.category === 'Music Team')
+              .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+              .slice(0, 3)
+              .map(notice => (
+                <div
+                  key={notice.id}
+                  className={`group relative bg-white dark:bg-slate-900/50 p-5 rounded-xl border transition-all animate-fade-in ${notice.isPinned
+                      ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-900/10'
+                      : 'border-slate-200 dark:border-slate-800'
+                    }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="size-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-emerald-600">music_note</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {notice.isPinned && (
+                            <span className="material-symbols-outlined text-emerald-600 text-lg" title="Fijado">push_pin</span>
+                          )}
+                          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{notice.title}</h3>
+                        </div>
+                        <span className="text-[10px] uppercase tracking-widest font-black px-2 py-0.5 rounded text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 shrink-0">
+                          {notice.category}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3 whitespace-pre-wrap">
+                        {notice.content}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
+                        <span className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm">person</span>
+                          {notice.author}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm">calendar_today</span>
+                          {notice.date}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-10">
 
         {/* Rehearsal Section */}

@@ -10,9 +10,10 @@ interface LayoutProps {
   title: string;
   notifications?: AppNotification[];
   onMarkRead?: () => void;
+  onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user, title, notifications = [], onMarkRead }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user, title, notifications = [], onMarkRead, onLogout }) => {
   const [showNotifications, setShowNotifications] = React.useState(false);
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -26,10 +27,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user,
   const navItems = [
     { id: AppView.DASHBOARD, icon: 'dashboard', label: 'Dashboard', roles: ['Leader'] },
     { id: AppView.CALENDAR, icon: 'calendar_month', label: 'Calendario', roles: ['Leader', 'Musician'] },
-    { id: AppView.SONGS, icon: 'music_note', label: 'Canciones', roles: ['Leader'] },
+    { id: AppView.SONGS, icon: 'music_note', label: 'Canciones', roles: ['Leader', 'Musician'] },
     { id: AppView.TEAM, icon: 'groups', label: 'Músicos', roles: ['Leader'] },
     { id: AppView.NOTICES, icon: 'notifications', label: 'Noticias', roles: ['Leader', 'Musician'] },
-    { id: AppView.MUSICIAN_VIEW, icon: 'queue_music', label: 'Mis Canciones', roles: ['Musician'] },
     { id: AppView.PROFILE, icon: 'account_circle', label: 'Mi Perfil', roles: ['Leader', 'Musician'] },
   ].filter(item => item.roles.includes(user?.role || 'Musician'));
 
@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user,
               <span className="material-symbols-outlined text-primary text-3xl font-black">church</span>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-white text-base font-black leading-tight tracking-tighter uppercase">Youth Ministry</h1>
+              <h1 className="text-white text-base font-black leading-tight tracking-tighter uppercase">MINISTERIO DE ADORACION</h1>
               <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Panel de Control</p>
             </div>
           </div>
@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user,
           )}
 
           <button
-            onClick={() => onNavigate(AppView.LOGIN)}
+            onClick={() => onLogout ? onLogout() : onNavigate(AppView.LOGIN)}
             className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 bg-primary/10 hover:bg-primary text-primary hover:text-white text-sm font-black transition-all border border-primary/20"
           >
             <span className="material-symbols-outlined text-sm">logout</span>
@@ -110,6 +110,15 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user,
             </div>
 
             <div className="flex items-center gap-2 relative">
+              {/* Mobile Logout Button */}
+              <button
+                onClick={() => onLogout && onLogout()}
+                className="md:hidden p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-all border border-red-100"
+                aria-label="Cerrar Sesión"
+              >
+                <span className="material-symbols-outlined text-xl">logout</span>
+              </button>
+
               <button
                 onClick={handleToggleNotifications}
                 className={`p-2.5 rounded-xl transition-all relative ${showNotifications ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 ring-1 ring-slate-200 dark:ring-slate-700'

@@ -40,20 +40,17 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, isLoading }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 soft-focus-bg">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[linear-gradient(rgba(185,28,28,0.9),rgba(127,29,29,0.95)),url('https://picsum.photos/seed/church/1920/1080')] bg-cover bg-center">
       <div className="w-full max-w-[450px] animate-fade-in">
         <div className="bg-white dark:bg-[#1a2130] rounded-xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/5">
           <div className="flex flex-col items-center pt-10 pb-6 px-8 text-center">
             <div className="relative mb-6">
-              <div className="w-20 h-20 rounded-full border-2 border-accent-gold flex items-center justify-center bg-white shadow-sm overflow-hidden">
+              <div className="w-20 h-20 rounded-full border-4 border-accent-gold flex items-center justify-center bg-white shadow-lg overflow-hidden">
                 <span className="text-primary material-symbols-outlined !text-4xl">church</span>
               </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent-gold rounded-full flex items-center justify-center border-2 border-white dark:border-[#1a2130]">
-                <span className="text-white material-symbols-outlined !text-xs">star</span>
-              </div>
             </div>
-            <h1 className="text-2xl font-bold text-church-navy dark:text-white tracking-tight">Youth Ministry Platform</h1>
-            <p className="text-[#636f88] dark:text-gray-400 text-sm mt-1 font-medium">Welcome back, leader</p>
+            <h1 className="text-2xl font-black text-church-navy dark:text-white tracking-tighter uppercase">MINISTERIO DE ADORACION</h1>
+            <p className="text-[#636f88] dark:text-gray-400 text-sm mt-1 font-bold uppercase tracking-widest">Plataforma de Gestión</p>
           </div>
 
           <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-5">

@@ -34,6 +34,62 @@ export const sendNotification = (title: string, body: string, icon?: string) => 
     }
 };
 
+// FCM via Backend API (HTTP v1)
+// We call our own serverless function which handles the secure communication with Firebase
+// This separates client logic from secret keys
+const API_URL = '/api/send-notification';
+
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db, COLLECTIONS } from '../firebase';
+
+export const sendPushToAll = async (title: string, body: string) => {
+    try {
+        // 1. Get all users with FCM tokens
+        const q = query(collection(db, COLLECTIONS.USERS), where('fcmToken', '!=', null));
+        const snapshot = await getDocs(q);
+
+        const tokens: string[] = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.fcmToken) {
+                tokens.push(data.fcmToken);
+            }
+        });
+
+        if (tokens.length === 0) {
+            console.log('No devices registered for push notifications.');
+            return;
+        }
+
+        console.log(`Sending push to ${tokens.length} devices via API...`);
+
+        // 2. Send to our Backend API (which uses firebase-admin)
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title,
+                body,
+                tokens
+            })
+        });
+
+        if (!response.ok) {
+            // Note: This might fail locally if 'npm run dev' doesn't support /api functions (needs 'vercel dev')
+            console.warn('Backend API call failed. If running locally, you might need "vercel dev" or a backend server.');
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+
+    } catch (error) {
+        console.error('Error sending push notification via API:', error);
+    }
+};
+
 /**
  * Triggers a personalized notification based on a leader's action.
  * @param leaderName Name of the leader (e.g., Solemny Matos)
@@ -59,5 +115,9 @@ export const notifyLeaderAction = (leaderName: string, actionType: 'song' | 'not
             break;
     }
 
+    // Send local (fallback)
     sendNotification(title, body);
+
+    // Send Push (Real-time)
+    sendPushToAll(title, body);
 };

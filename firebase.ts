@@ -53,7 +53,7 @@ export const requestPushPermission = async () => {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             const token = await getToken(messaging, {
-                vapidKey: 'YOUR_PUBLIC_VAPID_KEY' // Get this from Firebase Console -> Cloud Messaging
+                vapidKey: 'BF-vKjfzI9U4eSe2LUZ7MXB2Dzd02IRGeJssbHB8V1NhtD8MvqBSRr2wJ6Tj3kzhRuxH7HZKHsyVBFyA5l0rRfA'
             });
             console.log('FCM Token:', token);
             return token;
@@ -63,3 +63,10 @@ export const requestPushPermission = async () => {
     }
     return null;
 };
+
+export const onMessageListener = () =>
+    new Promise((resolve) => {
+        onMessage(messaging, (payload) => {
+            resolve(payload);
+        });
+    });
