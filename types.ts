@@ -20,6 +20,15 @@ export interface User {
   password?: string;
   avatar: string;
   instrument?: string;
+  fcmToken?: string;
+}
+
+export interface UserRegistrationData {
+  name: string;
+  username: string;
+  password: string;
+  instrument: string;
+  role: 'Leader' | 'Musician';
 }
 
 export interface Song {

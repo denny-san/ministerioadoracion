@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppView, User, TeamMember } from './types';
+import { AppView, User, TeamMember, UserRegistrationData } from './types';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
@@ -323,6 +323,54 @@ const App: React.FC = () => {
     setCurrentView(userData.role === 'Musician' ? AppView.SONGS : AppView.DASHBOARD);
   };
 
+  const handleRegister = async (registrationData: UserRegistrationData) => {
+    try {
+      // 1. Double check if username exists (client-side safety)
+      const usernameLower = registrationData.username.toLowerCase();
+      const exists = users.some(u => u.username.toLowerCase() === usernameLower || u.username.toLowerCase() === `@${usernameLower}` || `@${u.username.toLowerCase()}` === usernameLower);
+
+      if (exists) {
+        throw new Error('El nombre de usuario ya está en uso.');
+      }
+
+      // 2. Create User document
+      const newUserDoc = {
+        name: registrationData.name,
+        username: registrationData.username.startsWith('@') ? registrationData.username : `@${registrationData.username}`,
+        password: registrationData.password,
+        role: registrationData.role,
+        instrument: registrationData.instrument,
+        avatar: `https://picsum.photos/seed/${registrationData.username.replace('@', '')}/100/100`,
+        timestamp: serverTimestamp()
+      };
+
+      const userRef = await addDoc(collection(db, COLLECTIONS.USERS), newUserDoc);
+
+      // 3. Create Member document
+      await addDoc(collection(db, COLLECTIONS.MEMBERS), {
+        name: newUserDoc.name,
+        username: newUserDoc.username,
+        role: newUserDoc.role === 'Leader' ? 'Líder' : 'Músico',
+        status: 'Activo',
+        instrument: newUserDoc.instrument,
+        avatar: newUserDoc.avatar,
+        timestamp: serverTimestamp()
+      });
+
+      // 4. Auto login
+      const createdUser: User = {
+        id: userRef.id,
+        ...newUserDoc
+      } as User;
+
+      handleLogin(createdUser);
+      console.log("Usuario registrado y logueado exitosamente");
+    } catch (e) {
+      console.error("Error en el registro:", e);
+      throw e;
+    }
+  };
+
   const handleLogout = () => {
     setUser(null);
     setCurrentView(AppView.LOGIN);
@@ -397,7 +445,7 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case AppView.LOGIN:
-        return <Login users={users} onLogin={handleLogin} isLoading={isLoading} />;
+        return <Login users={users} onLogin={handleLogin} onRegister={handleRegister} isLoading={isLoading} />;
       case AppView.DASHBOARD:
         return <Dashboard
           onNavigate={setCurrentView}
