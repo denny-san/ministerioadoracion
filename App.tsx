@@ -267,6 +267,41 @@ const App: React.FC = () => {
   const handleAddSong = async (song: Partial<Song>) => {
     try {
       await addDoc(collection(db, COLLECTIONS.SONGS), { ...song, timestamp: serverTimestamp() });
+
+      // Auto-create next rehearsal event when a leader publishes an "Ensayo" song set
+      if (song.category === 'Ensayo' && user?.role === 'Leader') {
+        const now = new Date();
+        const getEventDateTime = (event: MinistryEvent) => {
+          if (event.time) {
+            return new Date(`${event.date}T${event.time}`);
+          }
+          return new Date(`${event.date}T23:59:59`);
+        };
+
+        const hasUpcomingEnsayo = events.some(e => e.type === 'Ensayo' && getEventDateTime(e) >= now);
+
+        if (!hasUpcomingEnsayo) {
+          const nextThursday = new Date(now);
+          const targetDay = 4; // Thursday (0=Sun)
+          let diff = (targetDay - nextThursday.getDay() + 7) % 7;
+          if (diff === 0) diff = 7;
+          nextThursday.setDate(nextThursday.getDate() + diff);
+
+          const yyyy = nextThursday.getFullYear();
+          const mm = String(nextThursday.getMonth() + 1).padStart(2, '0');
+          const dd = String(nextThursday.getDate()).padStart(2, '0');
+          const dateStr = `${yyyy}-${mm}-${dd}`;
+
+          await addDoc(collection(db, COLLECTIONS.EVENTS), {
+            title: 'Ensayo Semanal',
+            date: dateStr,
+            time: '19:30',
+            type: 'Ensayo',
+            notes: 'Creado automáticamente al publicar canciones de ensayo.',
+            timestamp: serverTimestamp()
+          });
+        }
+      }
     } catch (e) { console.error(e); }
   };
 
