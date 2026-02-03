@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user,
   ].filter(item => item.roles.includes(user?.role || 'Musician'));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark">
+    <div className="flex min-h-screen h-[100dvh] overflow-hidden bg-background-light dark:bg-background-dark">
       {/* Sidebar - Desktop Only */}
       <aside className="hidden md:flex w-64 bg-navy-dark flex-col justify-between p-6 shrink-0 border-r border-navy-dark/10">
         <div className="flex flex-col gap-8">
@@ -89,17 +89,17 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate, user,
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-y-auto pb-20 md:pb-0">
+      <main className="flex-1 min-w-0 flex flex-col overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
         {/* Top Navbar */}
-        <header className="flex items-center justify-between sticky top-0 z-40 bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 px-4 md:px-8 py-4">
-          <div className="flex items-center gap-3">
+        <header className="flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 px-4 md:px-8 py-4">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="md:hidden bg-primary rounded-lg p-1.5 flex items-center justify-center">
               <span className="material-symbols-outlined text-white text-xl">church</span>
             </div>
-            <h2 className="text-slate-900 dark:text-white text-xl md:text-2xl font-black tracking-tighter">{title}</h2>
+            <h2 className="text-slate-900 dark:text-white text-xl md:text-2xl font-black tracking-tighter truncate max-w-[60vw] md:max-w-none">{title}</h2>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-6 shrink-0">
             <div className="hidden sm:relative sm:block sm:w-64">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
               <input
