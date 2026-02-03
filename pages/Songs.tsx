@@ -10,6 +10,7 @@ interface SongsProps {
   notifications?: AppNotification[];
   onMarkNotificationsAsRead?: () => void;
   onAddNotification?: (type: 'song' | 'notice' | 'event', title: string, message: string) => void;
+  onConfirm?: (userId: string, confirmed: boolean) => void;
   songs: Song[];
   onAddSong: (song: Partial<Song>) => void;
   onUpdateSong: (song: Song) => void;
@@ -24,6 +25,7 @@ const Songs: React.FC<SongsProps> = ({
   notifications,
   onMarkNotificationsAsRead,
   onAddNotification,
+  onConfirm,
   songs,
   onAddSong,
   onUpdateSong,
@@ -33,6 +35,18 @@ const Songs: React.FC<SongsProps> = ({
 }) => {
   const leaderTitle = (user?.title || "").toLowerCase();
   const isWorshipLeader = user?.username === '@Solemny0109' || leaderTitle.includes('ador');
+  const isMusician = user?.role === 'Musician';
+
+  const currentMember = members?.find(m => {
+    if (user?.username && m.username === user.username) return true;
+    if (user?.name && m.name) {
+      const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      return normalize(m.name) === normalize(user.name);
+    }
+    return m.id === user?.id;
+  });
+
+  const liveConfirmed = currentMember?.isConfirmed || false;
 
   const [showModal, setShowModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -103,6 +117,31 @@ const Songs: React.FC<SongsProps> = ({
       onMarkRead={onMarkNotificationsAsRead}
       onLogout={onLogout}
     >
+      {isMusician && (
+        <div className="mb-8">
+          <div className={`p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 border transition-all ${liveConfirmed
+            ? 'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-800'
+            : 'bg-amber-50/50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-800'
+            }`}>
+            <div className="px-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mi Participación</p>
+              <p className={`text-sm font-bold ${liveConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {liveConfirmed ? '✓ Confirmado' : '⚠ Pendiente'}
+              </p>
+            </div>
+            <button
+              onClick={() => onConfirm && user && onConfirm(user.id, !liveConfirmed)}
+              className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all shadow-lg ${liveConfirmed
+                ? 'bg-white text-emerald-600 hover:bg-emerald-50 shadow-emerald-500/10'
+                : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+                }`}
+            >
+              {liveConfirmed ? 'Cancelar' : 'Confirmar Mi Parte'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Setlist & Repertorio</h1>
