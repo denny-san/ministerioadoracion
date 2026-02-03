@@ -556,6 +556,7 @@ const App: React.FC = () => {
           onMarkNotificationsAsRead={markNotificationsAsRead}
           songs={songs}
           notices={notices}
+          events={events}
           onLogout={handleLogout}
         />;
       case AppView.NOTICES:
