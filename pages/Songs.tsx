@@ -246,7 +246,7 @@ const Songs: React.FC<SongsProps> = ({
       {/* Modal de Canción */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-white/20">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-lg max-h-[85vh] overflow-hidden border border-white/20">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                 {editingSong ? 'Editar Canción' : 'Agregar Nueva Canción'}
@@ -256,7 +256,7 @@ const Songs: React.FC<SongsProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 space-y-4">
+            <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[70vh]">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 uppercase">Título</label>
