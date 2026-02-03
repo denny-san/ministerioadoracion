@@ -51,7 +51,14 @@ const Songs: React.FC<SongsProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [formData, setFormData] = useState<Partial<Song>>({
-    title: '', artist: '', key: '', type: 'Adoraci贸n', category: 'Repertorio', notes: ''
+    title: '',
+    artist: '',
+    key: '',
+    type: 'Adoraci贸n',
+    category: 'Repertorio',
+    notes: '',
+    rehearsalDate: '',
+    rehearsalTime: ''
   });
 
 
@@ -61,7 +68,7 @@ const Songs: React.FC<SongsProps> = ({
       setFormData(song);
     } else {
       setEditingSong(null);
-      setFormData({ title: '', artist: '', key: '', type: 'Adoraci贸n', category: 'Repertorio', notes: '' });
+      setFormData({ title: '', artist: '', key: '', type: 'Adoraci贸n', category: 'Repertorio', notes: '', rehearsalDate: '', rehearsalTime: '' });
     }
     setShowModal(true);
   };
@@ -74,6 +81,10 @@ const Songs: React.FC<SongsProps> = ({
       const newSongData: Partial<Song> = {
         ...formData
       };
+      if (newSongData.category !== 'Ensayo') {
+        delete newSongData.rehearsalDate;
+        delete newSongData.rehearsalTime;
+      }
       onAddSong(newSongData);
 
       // Notify team (push + in-app) only for worship leader
@@ -320,8 +331,37 @@ const Songs: React.FC<SongsProps> = ({
                 </div>
               </div>
 
+              {formData.category === 'Ensayo' && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Programar Ensayo (Hora RD)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase">D韆 del Ensayo (RD)</label>
+                      <input
+                        type="date"
+                        required
+                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                        value={formData.rehearsalDate || ''}
+                        onChange={e => setFormData({ ...formData, rehearsalDate: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase">Hora del Ensayo (RD)</label>
+                      <input
+                        type="time"
+                        required
+                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                        value={formData.rehearsalTime || ''}
+                        onChange={e => setFormData({ ...formData, rehearsalTime: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <div className="flex justify-between items-center mb-2">
+
                   <label className="text-xs font-bold text-slate-500 uppercase">M煤sicos Asignados</label>
                   <div className="flex gap-2">
                     <button

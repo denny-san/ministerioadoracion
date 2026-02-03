@@ -43,6 +43,8 @@ export interface Song {
   category?: 'Ensayo' | 'Culto' | 'Repertorio';
   assignedMusicians?: string[]; // Array of User IDs
   referenceUrl?: string;
+  rehearsalDate?: string; // YYYY-MM-DD (RD)
+  rehearsalTime?: string; // HH:mm (RD)
 }
 
 export interface Setlist {
