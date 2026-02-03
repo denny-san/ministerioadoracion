@@ -376,6 +376,33 @@ const App: React.FC = () => {
     setCurrentView(AppView.LOGIN);
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.USERS, user.id));
+    } catch (e) {
+      console.error("Error deleting user:", e);
+    }
+
+    const memberToDelete = members.find(m =>
+      m.username === user.username ||
+      m.name === user.name ||
+      m.id === user.id
+    );
+
+    if (memberToDelete) {
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.MEMBERS, memberToDelete.id));
+      } catch (e) {
+        console.error("Error deleting member profile:", e);
+      }
+    }
+
+    setUser(null);
+    setCurrentView(AppView.LOGIN);
+  };
+
   const handleUpdateUser = async (updatedUser: User) => {
     setUser(updatedUser);
 
@@ -525,6 +552,7 @@ const App: React.FC = () => {
           onNavigate={setCurrentView}
           user={user}
           onUpdateUser={handleUpdateUser}
+          onDeleteAccount={handleDeleteAccount}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onLogout={handleLogout}

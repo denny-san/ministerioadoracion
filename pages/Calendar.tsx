@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { AppView, User, MinistryEvent, AppNotification } from '../types';
@@ -92,20 +91,22 @@ const Calendar: React.FC<CalendarProps> = ({
       };
       onAddEvent(newEventData);
 
-      // Notify team
-      notifyLeaderAction(user?.name || 'AdministraciÃ³n', 'event', formData.title);
-      if (onAddNotification) {
-        onAddNotification('event', 'Nuevo Evento Agendado', `${user?.name || 'AdministraciÃ³n'} ha programado: ${formData.title}`);
+      // Notify team (push + in-app) only for leaders
+      if (isLeader) {
+        notifyLeaderAction(user?.name || 'Administración', 'event', formData.title);
+        if (onAddNotification) {
+          onAddNotification('event', 'Nuevo Evento Agendado', `${user?.name || 'Administración'} ha programado: ${formData.title}`);
+        }
       }
     }
     setShowModal(false);
   };
 
   const handleDelete = (id: string, title: string) => {
-    if (confirm(`Â¿Eliminar el evento "${title}"?`)) {
+    if (confirm(`¿Eliminar el evento "${title}"?`)) {
       onDeleteEvent(id);
       if (onAddNotification) {
-        onAddNotification('event', 'Evento Cancelado', `${user?.name || 'AdministraciÃ³n'} ha eliminado el evento: ${title}`);
+        onAddNotification('event', 'Evento Cancelado', `${user?.name || 'Administración'} ha eliminado el evento: ${title}`);
       }
       setShowModal(false);
     }
@@ -227,7 +228,7 @@ const Calendar: React.FC<CalendarProps> = ({
 
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">TÃ­tulo</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">Título</label>
                 <input
                   autoFocus
                   required

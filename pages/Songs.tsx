@@ -31,7 +31,8 @@ const Songs: React.FC<SongsProps> = ({
   members,
   onLogout
 }) => {
-  const isWorshipLeader = user?.username === '@Solemny0109' || user?.role === 'Leader';
+  const leaderTitle = (user?.title || "").toLowerCase();
+  const isWorshipLeader = user?.username === '@Solemny0109' || leaderTitle.includes('ador');
 
   const [showModal, setShowModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -61,10 +62,12 @@ const Songs: React.FC<SongsProps> = ({
       };
       onAddSong(newSongData);
 
-      // Notify team (Local notification logic remains as secondary feedback)
-      notifyLeaderAction(user?.name || 'Administración', 'song', formData.title || '');
-      if (onAddNotification) {
-        onAddNotification('song', 'Nueva Música', `${user?.name || 'Administración'} acaba de subir: ${formData.title}`);
+      // Notify team (push + in-app) only for worship leader
+      if (isWorshipLeader) {
+        notifyLeaderAction(user?.name || 'Administración', 'song', formData.title || '');
+        if (onAddNotification) {
+          onAddNotification('song', 'Nueva Música', `${user?.name || 'Administración'} acaba de subir: ${formData.title}`);
+        }
       }
     }
     setShowModal(false);

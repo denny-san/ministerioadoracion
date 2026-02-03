@@ -58,10 +58,12 @@ const Notices: React.FC<NoticesProps> = ({
       };
       onAddNotice(newNoticeData);
 
-      // Notify team
-      notifyLeaderAction(user?.name || 'Administración', 'notice', formData.title || '');
-      if (onAddNotification) {
-        onAddNotification('notice', 'Nuevo Aviso Oficial', `${user?.name || 'Administración'} acaba de publicar: ${formData.title}`);
+      // Notify team (push + in-app) only for leaders
+      if (isLeader) {
+        notifyLeaderAction(user?.name || 'Administración', 'notice', formData.title || '');
+        if (onAddNotification) {
+          onAddNotification('notice', 'Nuevo Aviso Oficial', `${user?.name || 'Administración'} acaba de publicar: ${formData.title}`);
+        }
       }
     }
     setShowModal(false);

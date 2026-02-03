@@ -7,12 +7,13 @@ interface ProfileProps {
     onNavigate: (view: AppView) => void;
     user: User | null;
     onUpdateUser: (updatedUser: User) => void;
+    onDeleteAccount?: () => void;
     notifications?: AppNotification[];
     onMarkNotificationsAsRead?: () => void;
     onLogout?: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notifications, onMarkNotificationsAsRead, onLogout }) => {
+const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, onDeleteAccount, notifications, onMarkNotificationsAsRead, onLogout }) => {
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -241,6 +242,19 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notif
 
                         <button
                             onClick={() => {
+                                if (!onDeleteAccount) return;
+                                if (confirm("ESTAS SEGURO? Esta accion eliminara tu cuenta y tu perfil del equipo. Esta operacion no se puede deshacer.")) {
+                                    onDeleteAccount();
+                                }
+                            }}
+                            className="flex-1 whitespace-nowrap px-6 py-3 rounded-xl bg-white dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-black hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                        >
+                            <span className="material-symbols-outlined text-lg">person_remove</span>
+                            BORRAR MI CUENTA
+                        </button>
+
+                        <button
+                            onClick={() => {
                                 if (confirm("¿ESTÁS SEGURO? Esta acción borrará todas las canciones, avisos y eventos de la plataforma. Esta operación no se puede deshacer.")) {
                                     const keys = [
                                         'youth_ministry_notifications',
@@ -265,3 +279,4 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notif
 };
 
 export default Profile;
+
