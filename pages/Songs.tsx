@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { AppView, User, Song, AppNotification, TeamMember } from '../types';
+import { AppView, User, Song, AppNotification, TeamMember, MinistryEvent } from '../types';
 import { notifyLeaderAction } from '../utils/notifications';
 
 interface SongsProps {
@@ -16,6 +16,7 @@ interface SongsProps {
   onUpdateSong: (song: Song) => void;
   onDeleteSong: (id: string) => void;
   members: TeamMember[];
+  events?: MinistryEvent[];
   onLogout?: () => void;
 }
 
@@ -31,6 +32,7 @@ const Songs: React.FC<SongsProps> = ({
   onUpdateSong,
   onDeleteSong,
   members,
+  events,
   onLogout
 }) => {
   const leaderTitle = (user?.title || "").toLowerCase();
@@ -47,6 +49,26 @@ const Songs: React.FC<SongsProps> = ({
   });
 
   const liveConfirmed = currentMember?.isConfirmed || false;
+
+  const now = new Date();
+  const getEventDateTime = (event: MinistryEvent) => {
+    if (event.time) {
+      return new Date(`${event.date}T${event.time}`);
+    }
+    return new Date(`${event.date}T23:59:59`);
+  };
+
+  const upcomingEvents = [...(events || [])]
+    .filter(e => getEventDateTime(e) >= now)
+    .sort((a, b) => getEventDateTime(a).getTime() - getEventDateTime(b).getTime());
+
+  const nextGeneralEvent = upcomingEvents.find(e => e.type !== 'Ensayo');
+  const nextRehearsal = upcomingEvents.find(e => e.type === 'Ensayo');
+
+  const formatDateSimple = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
@@ -152,6 +174,44 @@ const Songs: React.FC<SongsProps> = ({
           </div>
         </div>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Próximo Evento</p>
+            <span className="material-symbols-outlined text-primary">event</span>
+          </div>
+          {nextGeneralEvent ? (
+            <>
+              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight truncate">{nextGeneralEvent.title}</h3>
+              <p className="text-slate-900 dark:text-slate-300 font-semibold mt-1 capitalize">{formatDateSimple(nextGeneralEvent.date)}, {nextGeneralEvent.time}</p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold">Programado</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-slate-400 italic text-sm py-2">Sin eventos generales</p>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Próximo Ensayo</p>
+            <span className="material-symbols-outlined text-primary">rebase_edit</span>
+          </div>
+          {nextRehearsal ? (
+            <>
+              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight truncate">{nextRehearsal.title}</h3>
+              <p className="text-slate-900 dark:text-slate-300 font-semibold mt-1 capitalize">{formatDateSimple(nextRehearsal.date)}, {nextRehearsal.time}</p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="px-2 py-1 rounded-md bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[10px] font-bold">Ensayo Semanal</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-slate-400 italic text-sm py-2">Sin ensayos agendados</p>
+          )}
+        </div>
+      </div>
 
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-1">

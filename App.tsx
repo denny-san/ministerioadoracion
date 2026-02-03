@@ -531,6 +531,7 @@ const App: React.FC = () => {
           onUpdateSong={handleUpdateSong}
           onDeleteSong={handleDeleteSong}
           onConfirm={handleConfirmParticipation}
+          events={events}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onAddNotification={addAppNotification}
