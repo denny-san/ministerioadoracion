@@ -1,7 +1,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
-// Messaging removed (OneSignal handles push)
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // REPLACE WITH YOUR ACTUAL FIREBASE CONFIG FROM CONSOLE
 // https://console.firebase.google.com/
@@ -18,6 +18,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const messaging = getMessaging(app);
 
 // Collection helper
 export const COLLECTIONS = {
@@ -46,4 +47,26 @@ export const subscribeToCollection = (collectionName: string, callback: (data: a
     });
 };
 
-// Push handled by OneSignal (see utils/notifications.ts)
+// Push Notifications Setup
+export const requestPushPermission = async () => {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const token = await getToken(messaging, {
+                vapidKey: 'BF-vKjfzI9U4eSe2LUZ7MXB2Dzd02IRGeJssbHB8V1NhtD8MvqBSRr2wJ6Tj3kzhRuxH7HZKHsyVBFyA5l0rRfA'
+            });
+            console.log('FCM Token:', token);
+            return token;
+        }
+    } catch (error) {
+        console.error('Error getting push permission', error);
+    }
+    return null;
+};
+
+export const onMessageListener = () =>
+    new Promise((resolve) => {
+        onMessage(messaging, (payload) => {
+            resolve(payload);
+        });
+    });

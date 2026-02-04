@@ -1,83 +1,90 @@
+
 /**
- * Utility for handling notifications in the Youth Ministry Platform.
- * Uses OneSignal for real push + Browser Notification API as local fallback.
+ * Utility for handling browser notifications in the Youth Ministry Platform.
+ * Mimics real push notifications by using the Browser Notification API.
  */
 
-const API_URL = '/api/send-notification';
-
-declare global {
-    interface Window { OneSignalDeferred?: any[]; }
-}
-
-const withOneSignal = (callback: (OneSignal: any) => void) => {
-    if (typeof window === 'undefined') return;
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(callback);
-};
-
 export const requestNotificationPermission = async () => {
-    if (typeof window === 'undefined') return false;
+    if (!("Notification" in window)) {
+        console.log("This browser does not support desktop notification");
+        return false;
+    }
 
-    return new Promise<boolean>((resolve) => {
-        withOneSignal(async (OneSignal) => {
-            try {
-                const permission = await OneSignal.Notifications.requestPermission();
-                resolve(permission === 'granted' || permission === true);
-            } catch (e) {
-                console.error('OneSignal permission error:', e);
-                resolve(false);
-            }
-        });
-    });
-};
+    if (Notification.permission === "granted") {
+        return true;
+    }
 
-export const setOneSignalUser = async (externalId: string) => {
-    if (!externalId) return;
-    withOneSignal(async (OneSignal) => {
-        try {
-            await OneSignal.login(externalId);
-        } catch (e) {
-            console.error('OneSignal login error:', e);
-        }
-    });
-};
+    if (Notification.permission !== "denied") {
+        const permission = await Notification.requestPermission();
+        return permission === "granted";
+    }
 
-export const clearOneSignalUser = async () => {
-    withOneSignal(async (OneSignal) => {
-        try {
-            await OneSignal.logout();
-        } catch (e) {
-            console.error('OneSignal logout error:', e);
-        }
-    });
+    return false;
 };
 
 export const sendNotification = (title: string, body: string, icon?: string) => {
-    if (Notification.permission === 'granted') {
+    if (Notification.permission === "granted") {
         new Notification(title, {
             body,
-            icon: icon || '/church-logo.png',
+            icon: icon || "/church-logo.png", // Fallback to a logo if provided
         });
     } else {
+        // Fallback for demo purposes if permission not granted
         console.log(`[Notification Simulation] ${title}: ${body}`);
     }
 };
 
+// FCM via Backend API (HTTP v1)
+// We call our own serverless function which handles the secure communication with Firebase
+// This separates client logic from secret keys
+const API_URL = '/api/send-notification';
+
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db, COLLECTIONS } from '../firebase';
+
 export const sendPushToAll = async (title: string, body: string) => {
     try {
+        // 1. Get all users with FCM tokens
+        const q = query(collection(db, COLLECTIONS.USERS), where('fcmToken', '!=', null));
+        const snapshot = await getDocs(q);
+
+        const tokens: string[] = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.fcmToken) {
+                tokens.push(data.fcmToken);
+            }
+        });
+
+        if (tokens.length === 0) {
+            console.log('No devices registered for push notifications.');
+            return;
+        }
+
+        console.log(`Sending push to ${tokens.length} devices via API...`);
+
+        // 2. Send to our Backend API (which uses firebase-admin)
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, body })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title,
+                body,
+                tokens
+            })
         });
 
         if (!response.ok) {
-            console.warn('Backend API call failed. If running locally, you might need "vercel dev".');
+            // Note: This might fail locally if 'npm run dev' doesn't support /api functions (needs 'vercel dev')
+            console.warn('Backend API call failed. If running locally, you might need "vercel dev" or a backend server.');
             throw new Error(`API Error: ${response.statusText}`);
         }
 
         const data = await response.json();
         console.log('API Response:', data);
+
     } catch (error) {
         console.error('Error sending push notification via API:', error);
     }
@@ -85,29 +92,32 @@ export const sendPushToAll = async (title: string, body: string) => {
 
 /**
  * Triggers a personalized notification based on a leader's action.
+ * @param leaderName Name of the leader (e.g., Solemny Matos)
+ * @param actionType 'song' | 'notice' | 'event'
+ * @param contentTitle Title of the content (e.g., 'Rey de Reyes')
  */
 export const notifyLeaderAction = (leaderName: string, actionType: 'song' | 'notice' | 'event', contentTitle: string) => {
-    let title = 'Nueva actualización';
-    let body = '';
+    let title = "Nueva actualizaciÃ³n";
+    let body = "";
 
     switch (actionType) {
         case 'song':
-            title = 'Nueva Música';
-            body = `${leaderName} acaba de subir una nueva música: ${contentTitle}`;
+            title = "Nueva MÃºsica";
+            body = `${leaderName} acaba de subir una nueva mÃºsica: ${contentTitle}`;
             break;
         case 'notice':
-            title = 'Nuevo Aviso Oficial';
+            title = "Nuevo Aviso Oficial";
             body = `${leaderName} acaba de publicar un aviso: ${contentTitle}`;
             break;
         case 'event':
-            title = 'Nuevo Evento Agendado';
+            title = "Nuevo Evento Agendado";
             body = `${leaderName} ha programado un nuevo evento: ${contentTitle}`;
             break;
     }
 
-    // Local fallback
+    // Send local (fallback)
     sendNotification(title, body);
 
-    // Push
+    // Send Push (Real-time)
     sendPushToAll(title, body);
 };

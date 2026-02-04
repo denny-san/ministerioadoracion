@@ -7,13 +7,12 @@ interface ProfileProps {
     onNavigate: (view: AppView) => void;
     user: User | null;
     onUpdateUser: (updatedUser: User) => void;
-    onDeleteAccount?: () => void;
     notifications?: AppNotification[];
     onMarkNotificationsAsRead?: () => void;
     onLogout?: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, onDeleteAccount, notifications, onMarkNotificationsAsRead, onLogout }) => {
+const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notifications, onMarkNotificationsAsRead, onLogout }) => {
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -231,26 +230,13 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, onDel
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-4">
+                    <div className="flex gap-4">
                         <button
                             onClick={() => onLogout ? onLogout() : onNavigate(AppView.LOGIN)}
-                            className="w-full sm:flex-1 sm:min-w-[180px] whitespace-nowrap px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm flex items-center justify-center gap-2"
+                            className="flex-1 whitespace-nowrap px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm flex items-center justify-center gap-2"
                         >
                             <span className="material-symbols-outlined text-lg">logout</span>
                             CERRAR SESIÓN
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                if (!onDeleteAccount) return;
-                                if (confirm("ESTAS SEGURO? Esta accion eliminara tu cuenta y tu perfil del equipo. Esta operacion no se puede deshacer.")) {
-                                    onDeleteAccount();
-                                }
-                            }}
-                            className="w-full sm:flex-1 sm:min-w-[180px] whitespace-nowrap px-6 py-3 rounded-xl bg-white dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-black hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
-                        >
-                            <span className="material-symbols-outlined text-lg">person_remove</span>
-                            BORRAR MI CUENTA
                         </button>
 
                         <button
@@ -266,7 +252,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, onDel
                                     window.location.reload();
                                 }
                             }}
-                            className="w-full sm:flex-1 sm:min-w-[180px] whitespace-nowrap px-6 py-3 rounded-xl bg-white dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-black hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                            className="whitespace-nowrap px-6 py-3 rounded-xl bg-white dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-black hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
                         >
                             <span className="material-symbols-outlined text-lg">restart_alt</span>
                             BORRAR TODO
@@ -279,4 +265,3 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, onDel
 };
 
 export default Profile;
-

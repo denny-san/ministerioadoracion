@@ -31,17 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   // Dynamic Stats Logic
   const now = new Date();
-  const getEventDateTime = (event: MinistryEvent) => {
-    if (event.time) {
-      return new Date(`${event.date}T${event.time}`);
-    }
-    const endOfDay = new Date(`${event.date}T23:59:59`);
-    return endOfDay;
-  };
-
-  const upcomingEvents = [...events]
-    .filter(e => getEventDateTime(e) >= now)
-    .sort((a, b) => getEventDateTime(a).getTime() - getEventDateTime(b).getTime());
+  const upcomingEvents = [...events].filter(e => new Date(e.date + 'T' + (e.time || '00:00')) >= now).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const nextGeneralEvent = upcomingEvents.find(e => e.type !== 'Ensayo');
   const nextRehearsal = upcomingEvents.find(e => e.type === 'Ensayo');

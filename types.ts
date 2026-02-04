@@ -20,7 +20,7 @@ export interface User {
   password?: string;
   avatar: string;
   instrument?: string;
-  fcmTokens?: string[];
+  fcmToken?: string;
 }
 
 export interface UserRegistrationData {
@@ -43,8 +43,6 @@ export interface Song {
   category?: 'Ensayo' | 'Culto' | 'Repertorio';
   assignedMusicians?: string[]; // Array of User IDs
   referenceUrl?: string;
-  rehearsalDate?: string; // YYYY-MM-DD (RD)
-  rehearsalTime?: string; // HH:mm (RD)
 }
 
 export interface Setlist {

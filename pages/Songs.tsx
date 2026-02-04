@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { AppView, User, Song, AppNotification, TeamMember, MinistryEvent } from '../types';
+import { AppView, User, Song, AppNotification, TeamMember } from '../types';
 import { notifyLeaderAction } from '../utils/notifications';
 
 interface SongsProps {
@@ -10,13 +10,11 @@ interface SongsProps {
   notifications?: AppNotification[];
   onMarkNotificationsAsRead?: () => void;
   onAddNotification?: (type: 'song' | 'notice' | 'event', title: string, message: string) => void;
-  onConfirm?: (userId: string, confirmed: boolean) => void;
   songs: Song[];
   onAddSong: (song: Partial<Song>) => void;
   onUpdateSong: (song: Song) => void;
   onDeleteSong: (id: string) => void;
   members: TeamMember[];
-  events?: MinistryEvent[];
   onLogout?: () => void;
 }
 
@@ -26,61 +24,19 @@ const Songs: React.FC<SongsProps> = ({
   notifications,
   onMarkNotificationsAsRead,
   onAddNotification,
-  onConfirm,
   songs,
   onAddSong,
   onUpdateSong,
   onDeleteSong,
   members,
-  events,
   onLogout
 }) => {
-  const leaderTitle = (user?.title || "").toLowerCase();
-  const isWorshipLeader = user?.username === '@Solemny0109' || leaderTitle.includes('ador');
-  const isMusician = user?.role === 'Musician';
-
-  const currentMember = members?.find(m => {
-    if (user?.username && m.username === user.username) return true;
-    if (user?.name && m.name) {
-      const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      return normalize(m.name) === normalize(user.name);
-    }
-    return m.id === user?.id;
-  });
-
-  const liveConfirmed = currentMember?.isConfirmed || false;
-
-  const now = new Date();
-  const getEventDateTime = (event: MinistryEvent) => {
-    if (event.time) {
-      return new Date(`${event.date}T${event.time}`);
-    }
-    return new Date(`${event.date}T23:59:59`);
-  };
-
-  const upcomingEvents = [...(events || [])]
-    .filter(e => getEventDateTime(e) >= now)
-    .sort((a, b) => getEventDateTime(a).getTime() - getEventDateTime(b).getTime());
-
-  const nextGeneralEvent = upcomingEvents.find(e => e.type !== 'Ensayo');
-  const nextRehearsal = upcomingEvents.find(e => e.type === 'Ensayo');
-
-  const formatDateSimple = (dateStr: string) => {
-    const d = new Date(dateStr + 'T12:00:00');
-    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
-  };
+  const isWorshipLeader = user?.username === '@Solemny0109' || user?.role === 'Leader';
 
   const [showModal, setShowModal] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [formData, setFormData] = useState<Partial<Song>>({
-    title: '',
-    artist: '',
-    key: '',
-    type: 'Adoración',
-    category: 'Repertorio',
-    notes: '',
-    rehearsalDate: '',
-    rehearsalTime: ''
+    title: '', artist: '', key: '', type: 'Adoración', category: 'Repertorio', notes: ''
   });
 
 
@@ -90,7 +46,7 @@ const Songs: React.FC<SongsProps> = ({
       setFormData(song);
     } else {
       setEditingSong(null);
-      setFormData({ title: '', artist: '', key: '', type: 'Adoración', category: 'Repertorio', notes: '', rehearsalDate: '', rehearsalTime: '' });
+      setFormData({ title: '', artist: '', key: '', type: 'Adoración', category: 'Repertorio', notes: '' });
     }
     setShowModal(true);
   };
@@ -103,18 +59,12 @@ const Songs: React.FC<SongsProps> = ({
       const newSongData: Partial<Song> = {
         ...formData
       };
-      if (newSongData.category !== 'Ensayo') {
-        delete newSongData.rehearsalDate;
-        delete newSongData.rehearsalTime;
-      }
       onAddSong(newSongData);
 
-      // Notify team (push + in-app) only for worship leader
-      if (isWorshipLeader) {
-        notifyLeaderAction(user?.name || 'Administración', 'song', formData.title || '');
-        if (onAddNotification) {
-          onAddNotification('song', 'Nueva Música', `${user?.name || 'Administración'} acaba de subir: ${formData.title}`);
-        }
+      // Notify team (Local notification logic remains as secondary feedback)
+      notifyLeaderAction(user?.name || 'Administración', 'song', formData.title || '');
+      if (onAddNotification) {
+        onAddNotification('song', 'Nueva Música', `${user?.name || 'Administración'} acaba de subir: ${formData.title}`);
       }
     }
     setShowModal(false);
@@ -150,69 +100,6 @@ const Songs: React.FC<SongsProps> = ({
       onMarkRead={onMarkNotificationsAsRead}
       onLogout={onLogout}
     >
-      {isMusician && (
-        <div className="mb-8">
-          <div className={`p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 border transition-all ${liveConfirmed
-            ? 'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-800'
-            : 'bg-amber-50/50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-800'
-            }`}>
-            <div className="px-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mi Participación</p>
-              <p className={`text-sm font-bold ${liveConfirmed ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {liveConfirmed ? '✓ Confirmado' : '⚠ Pendiente'}
-              </p>
-            </div>
-            <button
-              onClick={() => onConfirm && user && onConfirm(user.id, !liveConfirmed)}
-              className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all shadow-lg ${liveConfirmed
-                ? 'bg-white text-emerald-600 hover:bg-emerald-50 shadow-emerald-500/10'
-                : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
-                }`}
-            >
-              {liveConfirmed ? 'Cancelar' : 'Confirmar Mi Parte'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Próximo Evento</p>
-            <span className="material-symbols-outlined text-primary">event</span>
-          </div>
-          {nextGeneralEvent ? (
-            <>
-              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight truncate">{nextGeneralEvent.title}</h3>
-              <p className="text-slate-900 dark:text-slate-300 font-semibold mt-1 capitalize">{formatDateSimple(nextGeneralEvent.date)}, {nextGeneralEvent.time}</p>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold">Programado</span>
-              </div>
-            </>
-          ) : (
-            <p className="text-slate-400 italic text-sm py-2">Sin eventos generales</p>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Próximo Ensayo</p>
-            <span className="material-symbols-outlined text-primary">rebase_edit</span>
-          </div>
-          {nextRehearsal ? (
-            <>
-              <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight truncate">{nextRehearsal.title}</h3>
-              <p className="text-slate-900 dark:text-slate-300 font-semibold mt-1 capitalize">{formatDateSimple(nextRehearsal.date)}, {nextRehearsal.time}</p>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="px-2 py-1 rounded-md bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[10px] font-bold">Ensayo Semanal</span>
-              </div>
-            </>
-          ) : (
-            <p className="text-slate-400 italic text-sm py-2">Sin ensayos agendados</p>
-          )}
-        </div>
-      </div>
-
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Setlist & Repertorio</h1>
@@ -306,7 +193,7 @@ const Songs: React.FC<SongsProps> = ({
       {/* Modal de Canción */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-lg max-h-[85vh] overflow-hidden border border-white/20">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-white/20">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                 {editingSong ? 'Editar Canción' : 'Agregar Nueva Canción'}
@@ -316,7 +203,7 @@ const Songs: React.FC<SongsProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+            <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 uppercase">Título</label>
@@ -391,37 +278,8 @@ const Songs: React.FC<SongsProps> = ({
                 </div>
               </div>
 
-              {formData.category === 'Ensayo' && (
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Programar Ensayo (Hora RD)</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">D�a del Ensayo (RD)</label>
-                      <input
-                        type="date"
-                        required
-                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        value={formData.rehearsalDate || ''}
-                        onChange={e => setFormData({ ...formData, rehearsalDate: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Hora del Ensayo (RD)</label>
-                      <input
-                        type="time"
-                        required
-                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        value={formData.rehearsalTime || ''}
-                        onChange={e => setFormData({ ...formData, rehearsalTime: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-1">
                 <div className="flex justify-between items-center mb-2">
-
                   <label className="text-xs font-bold text-slate-500 uppercase">Músicos Asignados</label>
                   <div className="flex gap-2">
                     <button

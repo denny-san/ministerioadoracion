@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react';
+
+import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { AppView, User, MinistryEvent, AppNotification } from '../types';
 import { notifyLeaderAction } from '../utils/notifications';
@@ -91,12 +92,10 @@ const Calendar: React.FC<CalendarProps> = ({
       };
       onAddEvent(newEventData);
 
-      // Notify team (push + in-app) only for leaders
-      if (isLeader) {
-        notifyLeaderAction(user?.name || 'Administración', 'event', formData.title);
-        if (onAddNotification) {
-          onAddNotification('event', 'Nuevo Evento Agendado', `${user?.name || 'Administración'} ha programado: ${formData.title}`);
-        }
+      // Notify team
+      notifyLeaderAction(user?.name || 'Administración', 'event', formData.title);
+      if (onAddNotification) {
+        onAddNotification('event', 'Nuevo Evento Agendado', `${user?.name || 'Administración'} ha programado: ${formData.title}`);
       }
     }
     setShowModal(false);
@@ -167,53 +166,49 @@ const Calendar: React.FC<CalendarProps> = ({
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px]">
-            <div className="grid grid-cols-7 border-b border-slate-100 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-800/20">
-              {weekDays.map(day => (
-                <div key={day} className="py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">{day}</div>
-              ))}
-            </div>
+        <div className="grid grid-cols-7 border-b border-slate-100 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-800/20">
+          {weekDays.map(day => (
+            <div key={day} className="py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">{day}</div>
+          ))}
+        </div>
 
-            <div className="grid grid-cols-7">
-              {/* Empty cells before month start */}
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="min-h-[120px] p-2 border-r border-b border-slate-100 dark:border-gray-800 bg-slate-50/20 dark:bg-gray-800/5"></div>
-              ))}
+        <div className="grid grid-cols-7">
+          {/* Empty cells before month start */}
+          {Array.from({ length: firstDay }).map((_, i) => (
+            <div key={`empty-${i}`} className="min-h-[120px] p-2 border-r border-b border-slate-100 dark:border-gray-800 bg-slate-50/20 dark:bg-gray-800/5"></div>
+          ))}
 
-              {/* Calendar days */}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const dayNum = i + 1;
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                const dayEvents = events.filter(e => e.date === dateStr);
-                const isToday = new Date().toDateString() === new Date(year, month, dayNum).toDateString();
+          {/* Calendar days */}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const dayNum = i + 1;
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+            const dayEvents = events.filter(e => e.date === dateStr);
+            const isToday = new Date().toDateString() === new Date(year, month, dayNum).toDateString();
 
-                return (
-                  <div
-                    key={dayNum}
-                    className={`min-h-[120px] p-2 border-r border-b border-slate-100 dark:border-gray-800 transition-colors hover:bg-slate-50/30 dark:hover:bg-gray-800/20 ${isToday ? 'bg-primary/5' : ''
-                      }`}
-                  >
-                    <span className={`text-sm font-bold ${isToday ? 'bg-primary text-white size-6 flex items-center justify-center rounded-full' : 'text-slate-400'
-                      }`}>{dayNum}</span>
+            return (
+              <div
+                key={dayNum}
+                className={`min-h-[120px] p-2 border-r border-b border-slate-100 dark:border-gray-800 transition-colors hover:bg-slate-50/30 dark:hover:bg-gray-800/20 ${isToday ? 'bg-primary/5' : ''
+                  }`}
+              >
+                <span className={`text-sm font-bold ${isToday ? 'bg-primary text-white size-6 flex items-center justify-center rounded-full' : 'text-slate-400'
+                  }`}>{dayNum}</span>
 
-                    <div className="mt-2 space-y-1">
-                      {dayEvents.map(event => (
-                        <div
-                          key={event.id}
-                          onClick={() => handleOpenModal(event)}
-                          className={`${getTypeStyles(event.type)} text-[10px] font-bold px-2 py-1 rounded border-l-2 cursor-pointer hover:opacity-80 transition-opacity truncate shadow-sm`}
-                          title={`${event.title} - ${event.time}`}
-                        >
-                          {event.time} {event.title}
-                        </div>
-                      ))}
+                <div className="mt-2 space-y-1">
+                  {dayEvents.map(event => (
+                    <div
+                      key={event.id}
+                      onClick={() => handleOpenModal(event)}
+                      className={`${getTypeStyles(event.type)} text-[10px] font-bold px-2 py-1 rounded border-l-2 cursor-pointer hover:opacity-80 transition-opacity truncate shadow-sm`}
+                      title={`${event.title} - ${event.time}`}
+                    >
+                      {event.time} {event.title}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
