@@ -132,10 +132,11 @@ const Team: React.FC<TeamProps> = ({
                 </p>
               </div>
               {isLeader && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenModal(member)}
                     className="text-gray-400 hover:text-primary transition-colors h-6 w-6 flex items-center justify-center"
+                    title="Editar"
                   >
                     <span className="material-symbols-outlined !text-lg">edit</span>
                   </button>
@@ -147,10 +148,10 @@ const Team: React.FC<TeamProps> = ({
                           onDeleteMember(member);
                         }
                       }}
-                      className="text-gray-400 hover:text-red-500 transition-colors h-6 w-6 flex items-center justify-center"
+                      className="px-2.5 h-7 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-wider"
                       title="Eliminar cuenta"
                     >
-                      <span className="material-symbols-outlined !text-lg">delete</span>
+                      Eliminar
                     </button>
                   )}
                 </div>
