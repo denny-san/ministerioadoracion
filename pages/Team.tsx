@@ -8,12 +8,13 @@ interface TeamProps {
   user: User | null;
   members: TeamMember[];
   onUpdateMembers: (updatedMembers: TeamMember[]) => void;
+  onDeleteMember?: (member: TeamMember) => void;
   notifications?: AppNotification[];
   onMarkNotificationsAsRead?: () => void;
 }
 
 const Team: React.FC<TeamProps> = ({
-  onNavigate, user, members, onUpdateMembers, notifications, onMarkNotificationsAsRead
+  onNavigate, user, members, onUpdateMembers, onDeleteMember, notifications, onMarkNotificationsAsRead
 }) => {
   const isLeader = user?.role === 'Leader';
 
@@ -131,12 +132,28 @@ const Team: React.FC<TeamProps> = ({
                 </p>
               </div>
               {isLeader && (
-                <button
-                  onClick={() => handleOpenModal(member)}
-                  className="text-gray-400 hover:text-primary transition-colors h-6 w-6 flex items-center justify-center"
-                >
-                  <span className="material-symbols-outlined !text-lg">edit</span>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleOpenModal(member)}
+                    className="text-gray-400 hover:text-primary transition-colors h-6 w-6 flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined !text-lg">edit</span>
+                  </button>
+                  {member.role === 'Musician' && (
+                    <button
+                      onClick={() => {
+                        if (!onDeleteMember) return;
+                        if (confirm(`Â¿Eliminar la cuenta de ${member.name}? Esta acciÃ³n no se puede deshacer.`)) {
+                          onDeleteMember(member);
+                        }
+                      }}
+                      className="text-gray-400 hover:text-red-500 transition-colors h-6 w-6 flex items-center justify-center"
+                      title="Eliminar cuenta"
+                    >
+                      <span className="material-symbols-outlined !text-lg">delete</span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

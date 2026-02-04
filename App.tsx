@@ -14,7 +14,7 @@ import { AppNotification, Song, MinistryNotice, MinistryEvent } from './types';
 
 // Firebase Imports
 import { db, COLLECTIONS, subscribeToCollection, requestPushPermission, onMessageListener } from './firebase';
-import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
@@ -206,14 +206,13 @@ const App: React.FC = () => {
     const initNotifications = async () => {
       const token = await requestPushPermission();
       if (token && user) {
-        // Save token to user profile if it's new
-        if (user.fcmToken !== token) {
-          console.log("Saving new FCM token for user:", user.username);
-          try {
-            await updateDoc(doc(db, COLLECTIONS.USERS, user.id), { fcmToken: token });
-          } catch (e) {
-            console.error("Error saving FCM token:", e);
-          }
+        console.log("Saving FCM token for user:", user.username);
+        try {
+          await updateDoc(doc(db, COLLECTIONS.USERS, user.id), {
+            fcmTokens: arrayUnion(token)
+          });
+        } catch (e) {
+          console.error("Error saving FCM token:", e);
         }
       }
     };
@@ -469,6 +468,31 @@ const App: React.FC = () => {
     setMembers(updatedMembers);
   };
 
+  const handleDeleteMember = async (member: TeamMember) => {
+    if (!user || user.role !== 'Leader') return;
+    if (member.role !== 'Musician') return;
+
+    // Delete member profile
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.MEMBERS, member.id));
+    } catch (e) {
+      console.error("Error deleting member:", e);
+    }
+
+    // Delete corresponding user account (by username or name)
+    const userToDelete = users.find(u =>
+      u.username === member.username || u.name === member.name
+    );
+
+    if (userToDelete) {
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.USERS, userToDelete.id));
+      } catch (e) {
+        console.error("Error deleting user account:", e);
+      }
+    }
+  };
+
 
   const handleConfirmParticipation = async (userId: string, isConfirmed: boolean) => {
     // Current user data from auth/localStorage
@@ -543,6 +567,7 @@ const App: React.FC = () => {
           user={user}
           members={members}
           onUpdateMembers={handleUpdateMembers}
+          onDeleteMember={handleDeleteMember}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onLogout={handleLogout}
