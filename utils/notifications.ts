@@ -39,22 +39,25 @@ export const sendNotification = (title: string, body: string, icon?: string) => 
 // This separates client logic from secret keys
 const API_URL = '/api/send-notification';
 
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db, COLLECTIONS } from '../firebase';
 
 export const sendPushToAll = async (title: string, body: string) => {
     try {
         // 1. Get all users with FCM tokens
-        const q = query(collection(db, COLLECTIONS.USERS), where('fcmToken', '!=', null));
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+        const tokensSet = new Set<string>();
 
-        const tokens: string[] = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            if (data.fcmToken) {
-                tokens.push(data.fcmToken);
+            if (Array.isArray(data.fcmTokens)) {
+                data.fcmTokens.forEach((t: string) => tokensSet.add(t));
+            } else if (data.fcmToken) {
+                tokensSet.add(data.fcmToken);
             }
         });
+
+        const tokens = Array.from(tokensSet);
 
         if (tokens.length === 0) {
             console.log('No devices registered for push notifications.');

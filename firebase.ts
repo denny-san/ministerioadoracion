@@ -1,7 +1,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 // REPLACE WITH YOUR ACTUAL FIREBASE CONFIG FROM CONSOLE
 // https://console.firebase.google.com/
@@ -50,10 +50,23 @@ export const subscribeToCollection = (collectionName: string, callback: (data: a
 // Push Notifications Setup
 export const requestPushPermission = async () => {
     try {
+        const supported = await isSupported();
+        if (!supported) {
+            console.log('Push messaging is not supported in this browser.');
+            return null;
+        }
+
+        if (!('serviceWorker' in navigator)) {
+            console.log('Service workers are not supported in this browser.');
+            return null;
+        }
+
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
+            const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
             const token = await getToken(messaging, {
-                vapidKey: 'BF-vKjfzI9U4eSe2LUZ7MXB2Dzd02IRGeJssbHB8V1NhtD8MvqBSRr2wJ6Tj3kzhRuxH7HZKHsyVBFyA5l0rRfA'
+                vapidKey: 'BF-vKjfzI9U4eSe2LUZ7MXB2Dzd02IRGeJssbHB8V1NhtD8MvqBSRr2wJ6Tj3kzhRuxH7HZKHsyVBFyA5l0rRfA',
+                serviceWorkerRegistration: swRegistration
             });
             console.log('FCM Token:', token);
             return token;

@@ -20,7 +20,7 @@ export interface User {
   password?: string;
   avatar: string;
   instrument?: string;
-  fcmToken?: string;
+  fcmTokens?: string[];
 }
 
 export interface UserRegistrationData {
