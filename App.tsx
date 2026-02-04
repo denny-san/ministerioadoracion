@@ -470,7 +470,6 @@ const App: React.FC = () => {
 
   const handleDeleteMember = async (member: TeamMember) => {
     if (!user || user.role !== 'Leader') return;
-    if (member.role !== 'Musician') return;
 
     // Delete member profile
     try {
@@ -481,7 +480,7 @@ const App: React.FC = () => {
 
     // Delete corresponding user account (by username or name)
     const userToDelete = users.find(u =>
-      u.username === member.username || u.name === member.name
+      (member.username && u.username === member.username) || u.name === member.name
     );
 
     if (userToDelete) {
