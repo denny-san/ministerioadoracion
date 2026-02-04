@@ -140,20 +140,18 @@ const Team: React.FC<TeamProps> = ({
                   >
                     <span className="material-symbols-outlined !text-lg">edit</span>
                   </button>
-                  {member.role === 'Musician' && (
-                    <button
-                      onClick={() => {
-                        if (!onDeleteMember) return;
-                        if (confirm(`Â¿Eliminar la cuenta de ${member.name}? Esta acciÃ³n no se puede deshacer.`)) {
-                          onDeleteMember(member);
-                        }
-                      }}
-                      className="px-2.5 h-7 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-wider"
-                      title="Eliminar cuenta"
-                    >
-                      Eliminar
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      if (!onDeleteMember) return;
+                      if (confirm(`Â¿Eliminar la cuenta de ${member.name}? Esta acciÃ³n no se puede deshacer.`)) {
+                        onDeleteMember(member);
+                      }
+                    }}
+                    className="px-2.5 h-7 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-wider"
+                    title="Eliminar cuenta"
+                  >
+                    Eliminar
+                  </button>
                 </div>
               )}
             </div>
