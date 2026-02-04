@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(() => {
     const saved = localStorage.getItem('youth_ministry_currentView');
     return (saved as AppView) || AppView.LOGIN;
-  });\r\n
+  });
   // Global App States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -602,10 +602,5 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-
-
-
-
 
 
