@@ -1,4 +1,4 @@
-
+﻿
 export enum AppView {
   LOGIN = 'LOGIN',
   DASHBOARD = 'DASHBOARD',
@@ -90,3 +90,4 @@ export interface AppNotification {
   type: 'song' | 'notice' | 'event';
   isRead: boolean;
 }
+

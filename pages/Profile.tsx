@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useRef } from 'react';
 import Layout from '../components/Layout';
 import { AppView, User, AppNotification } from '../types';
@@ -7,12 +7,13 @@ interface ProfileProps {
     onNavigate: (view: AppView) => void;
     user: User | null;
     onUpdateUser: (updatedUser: User) => void;
+    onDeleteAccount?: () => void;
     notifications?: AppNotification[];
     onMarkNotificationsAsRead?: () => void;
     onLogout?: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notifications, onMarkNotificationsAsRead, onLogout }) => {
+const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, onDeleteAccount, notifications, onMarkNotificationsAsRead, onLogout }) => {
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -258,6 +259,16 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notif
                             BORRAR TODO
                         </button>
                     </div>
+
+                    <div className="flex">
+                        <button
+                            onClick={() => onDeleteAccount && onDeleteAccount()}
+                            className="w-full whitespace-nowrap px-6 py-3 rounded-xl bg-red-600 text-white text-xs font-black hover:bg-red-700 transition-all shadow-sm flex items-center justify-center gap-2"
+                        >
+                            <span className="material-symbols-outlined text-lg">delete_forever</span>
+                            ELIMINAR MI CUENTA
+                        </button>
+                    </div>
                 </div>
             </div>
         </Layout >
@@ -265,3 +276,4 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate, user, onUpdateUser, notif
 };
 
 export default Profile;
+

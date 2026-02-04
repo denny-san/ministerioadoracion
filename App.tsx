@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { AppView, User, TeamMember, UserRegistrationData } from './types';
 import Login from './pages/Login';
@@ -9,11 +9,10 @@ import Team from './pages/Team';
 import MusicianView from './pages/MusicianView';
 import Notices from './pages/Notices';
 import Profile from './pages/Profile';
-import { requestNotificationPermission } from './utils/notifications';
 import { AppNotification, Song, MinistryNotice, MinistryEvent } from './types';
 
 // Firebase Imports
-import { db, COLLECTIONS, subscribeToCollection, requestPushPermission, onMessageListener } from './firebase';
+import { db, COLLECTIONS, subscribeToCollection } from './firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 const App: React.FC = () => {
@@ -71,9 +70,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // 🧹 Deduplication & Seeding Logic
+  // Deduplication Logic
   useEffect(() => {
-    const runCleanupAndSeed = async () => {
+    const runCleanup = async () => {
       if (isLoading || users.length === 0) return;
 
       // 1. Cleanup existing duplicates in MEMBERS
@@ -99,46 +98,9 @@ const App: React.FC = () => {
         }
       }
 
-      // 3. Ensure full roster exists
-      const roster = [
-        { name: 'Bladimir Acosta', username: '@Bladimir0109', role: 'Leader', title: 'Presidente', instrument: 'Dirección', avatar: 'https://picsum.photos/seed/bladimir/100/100' },
-        { name: 'Ester Montilla', username: '@Ester0109', role: 'Leader', title: 'Vicepresidenta', instrument: 'Dirección', avatar: 'https://picsum.photos/seed/ester/100/100' },
-        { name: 'Solemny Matos', username: '@Solemny0109', role: 'Leader', title: 'Líder de Adoración', instrument: 'Voz / Guitarra', avatar: 'https://picsum.photos/seed/solemny/100/100' },
-        { name: 'Denny Sánchez', username: '@Denny0109', role: 'Musician', title: 'Músico', instrument: 'Batería', avatar: 'https://picsum.photos/seed/denny/100/100' },
-        { name: 'Sandy', username: '@Sandy0109', role: 'Musician', title: 'Músico', instrument: 'Piano #1', avatar: 'https://picsum.photos/seed/sandy/100/100' },
-        { name: 'Raibel Mejía', username: '@Raibel0109', role: 'Musician', title: 'Músico', instrument: 'Piano #2', avatar: 'https://picsum.photos/seed/raibel/100/100' },
-        { name: 'Franny Ramírez', username: '@Franny', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/franny/100/100' },
-        { name: 'Yasmel Carvajal', username: '@Yasmel0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/yasmel/100/100' },
-        { name: 'Débora', username: '@Debora0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/debora/100/100' },
-        { name: 'Natacha Ramírez', username: '@Natacha0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/natacha/100/100' },
-        { name: 'Yocandra Feliz', username: '@Yocandra0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/yocandra/100/100' }
-      ];
-
-      for (const m of roster) {
-        const mLower = m.username.toLowerCase();
-        const userExists = users.some(u => u.username.toLowerCase() === mLower || u.username.toLowerCase() === mLower.replace('@', ''));
-        const memberExists = members.some(mb => mb.name === m.name);
-
-        if (!userExists) {
-          try { await addDoc(collection(db, COLLECTIONS.USERS), { ...m, password: 'password123', timestamp: serverTimestamp() }); } catch (e) { }
-        }
-        if (!memberExists) {
-          try {
-            await addDoc(collection(db, COLLECTIONS.MEMBERS), {
-              name: m.name,
-              username: m.username, // Added username
-              role: m.title || 'Músico',
-              status: 'Activo',
-              instrument: m.instrument,
-              avatar: m.avatar,
-              timestamp: serverTimestamp()
-            });
-          } catch (e) { }
-        }
-      }
     };
 
-    runCleanupAndSeed();
+    runCleanup();
   }, [users.length, members.length, isLoading]);
 
   // Migration: Ensure existing members have their @username for correct filtering
@@ -200,40 +162,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('youth_ministry_currentView', currentView);
   }, [currentView]);
-
-  useEffect(() => {
-    // Request permission and get token
-    const initNotifications = async () => {
-      const token = await requestPushPermission();
-      if (token && user) {
-        // Save token to user profile if it's new
-        if (user.fcmToken !== token) {
-          console.log("Saving new FCM token for user:", user.username);
-          try {
-            await updateDoc(doc(db, COLLECTIONS.USERS, user.id), { fcmToken: token });
-          } catch (e) {
-            console.error("Error saving FCM token:", e);
-          }
-        }
-      }
-    };
-
-    if (user) {
-      initNotifications();
-    }
-
-    // Foreground listener
-    const unsubscribe = onMessageListener().then(payload => {
-      // @ts-ignore
-      const { title, body } = payload.notification;
-      addAppNotification('notice', title, body);
-      new Notification(title, { body, icon: '/vite.svg' });
-    });
-
-    return () => {
-      // Cleanup if needed
-    };
-  }, [user]);
 
   const addAppNotification = async (type: 'song' | 'notice' | 'event', title: string, message: string) => {
     const newNotification = {
@@ -419,6 +347,35 @@ const App: React.FC = () => {
     setMembers(updatedMembers);
   };
 
+  const handleDeleteOwnAccount = async () => {
+    if (!user) return;
+
+    const confirmed = confirm("¿Estás seguro? Esta acción eliminará tu cuenta y tus datos. No se puede deshacer.");
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.USERS, user.id));
+    } catch (e) {
+      console.error("Error deleting user account:", e);
+    }
+
+    const memberToDelete = members.find(m =>
+      m.username === user.username || m.name === user.name
+    );
+
+    if (memberToDelete) {
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.MEMBERS, memberToDelete.id));
+      } catch (e) {
+        console.error("Error deleting member profile:", e);
+      }
+    }
+
+    localStorage.removeItem('youth_ministry_user');
+    setUser(null);
+    setCurrentView(AppView.LOGIN);
+  };
+
   const handleDeleteMember = async (member: TeamMember) => {
     if (!user || user.role !== 'Leader') return;
 
@@ -470,7 +427,7 @@ const App: React.FC = () => {
         await updateDoc(doc(db, COLLECTIONS.MEMBERS, member.id), { isConfirmed });
         console.log(`Participación de ${member.name} actualizada a: ${isConfirmed}`);
       } catch (e) {
-        console.error("Error confirmando participación:", e);
+        console.error("Error confirmando Participación:", e);
       }
     }
   };
@@ -535,6 +492,7 @@ const App: React.FC = () => {
           user={user}
           onConfirm={handleConfirmParticipation}
           members={members}
+          events={events}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           songs={songs}
@@ -559,6 +517,7 @@ const App: React.FC = () => {
           onNavigate={setCurrentView}
           user={user}
           onUpdateUser={handleUpdateUser}
+          onDeleteAccount={handleDeleteOwnAccount}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onLogout={handleLogout}
@@ -586,3 +545,6 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+

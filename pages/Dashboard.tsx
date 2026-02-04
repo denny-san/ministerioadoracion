@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Layout from '../components/Layout';
 import { AppView, User, TeamMember, AppNotification, Song, MinistryNotice, MinistryEvent } from '../types';
 
@@ -264,3 +264,4 @@ const Dashboard: React.FC<DashboardProps> = ({
 };
 
 export default Dashboard;
+

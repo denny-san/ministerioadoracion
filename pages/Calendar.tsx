@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { AppView, User, MinistryEvent, AppNotification } from '../types';
@@ -331,3 +331,4 @@ const Calendar: React.FC<CalendarProps> = ({
 };
 
 export default Calendar;
+

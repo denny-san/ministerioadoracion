@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { AppView, User, MinistryNotice, AppNotification } from '../types';
@@ -233,3 +233,4 @@ const Notices: React.FC<NoticesProps> = ({
 };
 
 export default Notices;
+
