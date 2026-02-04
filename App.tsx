@@ -419,6 +419,39 @@ const App: React.FC = () => {
     setMembers(updatedMembers);
   };
 
+  const handleDeleteMember = async (member: TeamMember) => {
+    if (!user || user.role !== 'Leader') return;
+
+    const normalize = (s: string) => s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+    const roleNorm = normalize(member.role || '');
+    if (roleNorm.includes('lider') || roleNorm.includes('president') || roleNorm.includes('vice')) {
+      return; // Safety: don't delete leadership roles
+    }
+
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.MEMBERS, member.id));
+    } catch (e) {
+      console.error("Error deleting member:", e);
+    }
+
+    const userToDelete = users.find(u =>
+      (member.username && u.username === member.username) || u.name === member.name
+    );
+
+    if (userToDelete) {
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.USERS, userToDelete.id));
+      } catch (e) {
+        console.error("Error deleting user account:", e);
+      }
+    }
+  };
+
 
   const handleConfirmParticipation = async (userId: string, isConfirmed: boolean) => {
     // Current user data from auth/localStorage
@@ -491,6 +524,7 @@ const App: React.FC = () => {
           user={user}
           members={members}
           onUpdateMembers={handleUpdateMembers}
+          onDeleteMember={handleDeleteMember}
           notifications={notifications}
           onMarkNotificationsAsRead={markNotificationsAsRead}
           onLogout={handleLogout}

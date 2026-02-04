@@ -8,12 +8,13 @@ interface TeamProps {
   user: User | null;
   members: TeamMember[];
   onUpdateMembers: (updatedMembers: TeamMember[]) => void;
+  onDeleteMember?: (member: TeamMember) => void;
   notifications?: AppNotification[];
   onMarkNotificationsAsRead?: () => void;
 }
 
 const Team: React.FC<TeamProps> = ({
-  onNavigate, user, members, onUpdateMembers, notifications, onMarkNotificationsAsRead
+  onNavigate, user, members, onUpdateMembers, onDeleteMember, notifications, onMarkNotificationsAsRead
 }) => {
   const isLeader = user?.role === 'Leader';
 
@@ -131,12 +132,27 @@ const Team: React.FC<TeamProps> = ({
                 </p>
               </div>
               {isLeader && (
-                <button
-                  onClick={() => handleOpenModal(member)}
-                  className="text-gray-400 hover:text-primary transition-colors h-6 w-6 flex items-center justify-center"
-                >
-                  <span className="material-symbols-outlined !text-lg">edit</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenModal(member)}
+                    className="text-gray-400 hover:text-primary transition-colors h-6 w-6 flex items-center justify-center"
+                    title="Editar"
+                  >
+                    <span className="material-symbols-outlined !text-lg">edit</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!onDeleteMember) return;
+                      if (confirm(`¿Eliminar la cuenta de ${member.name}? Esta acción no se puede deshacer.`)) {
+                        onDeleteMember(member);
+                      }
+                    }}
+                    className="px-2.5 h-7 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-wider"
+                    title="Eliminar cuenta"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               )}
             </div>
 
