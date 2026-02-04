@@ -9,12 +9,12 @@ import Team from './pages/Team';
 import MusicianView from './pages/MusicianView';
 import Notices from './pages/Notices';
 import Profile from './pages/Profile';
-import { requestNotificationPermission } from './utils/notifications';
+import { requestNotificationPermission, setOneSignalUser, clearOneSignalUser } from './utils/notifications';
 import { AppNotification, Song, MinistryNotice, MinistryEvent } from './types';
 
 // Firebase Imports
-import { db, COLLECTIONS, subscribeToCollection, requestPushPermission, onMessageListener } from './firebase';
-import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { db, COLLECTIONS, subscribeToCollection } from './firebase';
+import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
@@ -25,14 +25,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(() => {
     const saved = localStorage.getItem('youth_ministry_currentView');
     return (saved as AppView) || AppView.LOGIN;
-  });
-
-  // Helper function to load from localStorage (Fallback)
-  const getInitialState = <T,>(key: string, fallback: T): T => {
-    const saved = localStorage.getItem(`youth_ministry_${key}`);
-    return saved ? JSON.parse(saved) : fallback;
-  };
-
+  });\r\n
   // Global App States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -71,7 +64,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // ðŸ§¹ Deduplication & Seeding Logic
+  // ?? Deduplication & Seeding Logic
   useEffect(() => {
     const runCleanupAndSeed = async () => {
       if (isLoading || users.length === 0) return;
@@ -101,17 +94,17 @@ const App: React.FC = () => {
 
       // 3. Ensure full roster exists
       const roster = [
-        { name: 'Bladimir Acosta', username: '@Bladimir0109', role: 'Leader', title: 'Presidente', instrument: 'DirecciÃ³n', avatar: 'https://picsum.photos/seed/bladimir/100/100' },
-        { name: 'Ester Montilla', username: '@Ester0109', role: 'Leader', title: 'Vicepresidenta', instrument: 'DirecciÃ³n', avatar: 'https://picsum.photos/seed/ester/100/100' },
-        { name: 'Solemny Matos', username: '@Solemny0109', role: 'Leader', title: 'LÃ­der de AdoraciÃ³n', instrument: 'Voz / Guitarra', avatar: 'https://picsum.photos/seed/solemny/100/100' },
-        { name: 'Denny SÃ¡nchez', username: '@Denny0109', role: 'Musician', title: 'MÃºsico', instrument: 'BaterÃ­a', avatar: 'https://picsum.photos/seed/denny/100/100' },
-        { name: 'Sandy', username: '@Sandy0109', role: 'Musician', title: 'MÃºsico', instrument: 'Piano #1', avatar: 'https://picsum.photos/seed/sandy/100/100' },
-        { name: 'Raibel MejÃ­a', username: '@Raibel0109', role: 'Musician', title: 'MÃºsico', instrument: 'Piano #2', avatar: 'https://picsum.photos/seed/raibel/100/100' },
-        { name: 'Franny RamÃ­rez', username: '@Franny', role: 'Musician', title: 'MÃºsico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/franny/100/100' },
-        { name: 'Yasmel Carvajal', username: '@Yasmel0109', role: 'Musician', title: 'MÃºsico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/yasmel/100/100' },
-        { name: 'DÃ©bora', username: '@Debora0109', role: 'Musician', title: 'MÃºsico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/debora/100/100' },
-        { name: 'Natacha RamÃ­rez', username: '@Natacha0109', role: 'Musician', title: 'MÃºsico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/natacha/100/100' },
-        { name: 'Yocandra Feliz', username: '@Yocandra0109', role: 'Musician', title: 'MÃºsico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/yocandra/100/100' }
+        { name: 'Bladimir Acosta', username: '@Bladimir0109', role: 'Leader', title: 'Presidente', instrument: 'Dirección', avatar: 'https://picsum.photos/seed/bladimir/100/100' },
+        { name: 'Ester Montilla', username: '@Ester0109', role: 'Leader', title: 'Vicepresidenta', instrument: 'Dirección', avatar: 'https://picsum.photos/seed/ester/100/100' },
+        { name: 'Solemny Matos', username: '@Solemny0109', role: 'Leader', title: 'Líder de Adoración', instrument: 'Voz / Guitarra', avatar: 'https://picsum.photos/seed/solemny/100/100' },
+        { name: 'Denny Sánchez', username: '@Denny0109', role: 'Musician', title: 'Músico', instrument: 'Batería', avatar: 'https://picsum.photos/seed/denny/100/100' },
+        { name: 'Sandy', username: '@Sandy0109', role: 'Musician', title: 'Músico', instrument: 'Piano #1', avatar: 'https://picsum.photos/seed/sandy/100/100' },
+        { name: 'Raibel Mejía', username: '@Raibel0109', role: 'Musician', title: 'Músico', instrument: 'Piano #2', avatar: 'https://picsum.photos/seed/raibel/100/100' },
+        { name: 'Franny Ramírez', username: '@Franny', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/franny/100/100' },
+        { name: 'Yasmel Carvajal', username: '@Yasmel0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/yasmel/100/100' },
+        { name: 'Débora', username: '@Debora0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/debora/100/100' },
+        { name: 'Natacha Ramírez', username: '@Natacha0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/natacha/100/100' },
+        { name: 'Yocandra Feliz', username: '@Yocandra0109', role: 'Musician', title: 'Músico', instrument: 'Voz', avatar: 'https://picsum.photos/seed/yocandra/100/100' }
       ];
 
       for (const m of roster) {
@@ -126,8 +119,8 @@ const App: React.FC = () => {
           try {
             await addDoc(collection(db, COLLECTIONS.MEMBERS), {
               name: m.name,
-              username: m.username, // Added username
-              role: m.title || 'MÃºsico',
+              username: m.username,
+              role: m.title || 'Músico',
               status: 'Activo',
               instrument: m.instrument,
               avatar: m.avatar,
@@ -167,7 +160,6 @@ const App: React.FC = () => {
       for (const s of songs) {
         if (!s.assignedMusicians) continue;
 
-        // Check if any ID in the array looks like a Firestore ID (longer than 15 chars and no @)
         const needsUpdate = s.assignedMusicians.some(id => id.length > 15 && !id.startsWith('@'));
 
         if (needsUpdate) {
@@ -201,37 +193,16 @@ const App: React.FC = () => {
     localStorage.setItem('youth_ministry_currentView', currentView);
   }, [currentView]);
 
+
   useEffect(() => {
-    // Request permission and get token
+    if (!user) return;
+
     const initNotifications = async () => {
-      const token = await requestPushPermission();
-      if (token && user) {
-        console.log("Saving FCM token for user:", user.username);
-        try {
-          await updateDoc(doc(db, COLLECTIONS.USERS, user.id), {
-            fcmTokens: arrayUnion(token)
-          });
-        } catch (e) {
-          console.error("Error saving FCM token:", e);
-        }
-      }
+      await requestNotificationPermission();
+      await setOneSignalUser(user.username);
     };
 
-    if (user) {
-      initNotifications();
-    }
-
-    // Foreground listener
-    const unsubscribe = onMessageListener().then(payload => {
-      // @ts-ignore
-      const { title, body } = payload.notification;
-      addAppNotification('notice', title, body);
-      new Notification(title, { body, icon: '/vite.svg' });
-    });
-
-    return () => {
-      // Cleanup if needed
-    };
+    initNotifications();
   }, [user]);
 
   const addAppNotification = async (type: 'song' | 'notice' | 'event', title: string, message: string) => {
@@ -394,6 +365,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    clearOneSignalUser();
     setUser(null);
     setCurrentView(AppView.LOGIN);
   };
@@ -630,3 +602,10 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
+
+
+

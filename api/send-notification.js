@@ -1,64 +1,53 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getMessaging } from 'firebase-admin/messaging';
-
-// You will need to put your Service Account JSON here or in environment variables
-// For Vercel, use process.env.FIREBASE_SERVICE_ACCOUNT
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : null;
-
-if (!getApps().length && serviceAccount) {
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
-}
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    if (!serviceAccount) {
-        return res.status(500).json({ error: 'Missing Server Configuration (Service Account)' });
+    const appId = process.env.ONESIGNAL_APP_ID;
+    const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+
+    if (!appId || !apiKey) {
+        return res.status(500).json({ error: 'Missing OneSignal configuration' });
     }
 
-    const { title, body, tokens } = req.body;
+    const { title, body, url, externalIds } = req.body || {};
 
-    if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-        return res.status(400).json({ error: 'No tokens provided' });
+    if (!title || !body) {
+        return res.status(400).json({ error: 'Missing title or body' });
+    }
+
+    const payload = {
+        app_id: appId,
+        headings: { en: title },
+        contents: { en: body },
+        url: url || '/',
+    };
+
+    if (Array.isArray(externalIds) && externalIds.length > 0) {
+        payload.include_external_user_ids = externalIds;
+    } else {
+        payload.included_segments = ['All'];
     }
 
     try {
-        const message = {
-            notification: {
-                title,
-                body,
+        const response = await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Authorization': `Basic ${apiKey}`
             },
-            tokens: tokens, // 'multicast' message
-            webpush: {
-                fcmOptions: {
-                    link: '/'
-                }
-            }
-        };
+            body: JSON.stringify(payload)
+        });
 
-        const response = await getMessaging().sendEachForMulticast(message);
+        const data = await response.json();
 
-        console.log('Successfully sent message:', response);
-
-        if (response.failureCount > 0) {
-            const failedTokens = [];
-            response.responses.forEach((resp, idx) => {
-                if (!resp.success) {
-                    failedTokens.push(tokens[idx]);
-                }
-            });
-            console.log('List of tokens that caused failures: ' + failedTokens);
+        if (!response.ok) {
+            return res.status(response.status).json({ error: 'OneSignal API error', details: data });
         }
 
-        return res.status(200).json({ success: true, response });
+        return res.status(200).json({ success: true, response: data });
     } catch (error) {
-        console.error('Error sending message:', error);
-        return res.status(500).json({ error: 'Error sending message', details: error.message });
+        console.error('Error sending OneSignal notification:', error);
+        return res.status(500).json({ error: 'Error sending notification', details: error.message });
     }
 }
