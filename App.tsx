@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppView, User, TeamMember, UserRegistrationData } from './types';
+import { AppView, User, TeamMember, UserRegistrationData, AppNotification, Song, MinistryNotice, MinistryEvent } from './types';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
@@ -10,7 +10,6 @@ import MusicianView from './pages/MusicianView';
 import Notices from './pages/Notices';
 import Profile from './pages/Profile';
 import { requestNotificationPermission, setOneSignalUser, clearOneSignalUser } from './utils/notifications';
-import { AppNotification, Song, MinistryNotice, MinistryEvent } from './types';
 
 // Firebase Imports
 import { db, COLLECTIONS, subscribeToCollection } from './firebase';
@@ -69,18 +68,25 @@ const App: React.FC = () => {
     const runCleanupAndSeed = async () => {
       if (isLoading || users.length === 0) return;
 
-      // 1. Cleanup existing duplicates in MEMBERS
-      const seenNames = new Set();
+      const normalize = (s: string) => s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+
+      // 1. Cleanup existing duplicates in MEMBERS (by username, fallback to normalized name)
+      const seenMemberKeys = new Set();
       for (const m of members) {
-        if (seenNames.has(m.name)) {
+        const key = m.username ? m.username.toLowerCase() : normalize(m.name);
+        if (seenMemberKeys.has(key)) {
           console.log("Removing duplicate member:", m.name);
           try { await deleteDoc(doc(db, COLLECTIONS.MEMBERS, m.id)); } catch (e) { }
         } else {
-          seenNames.add(m.name);
+          seenMemberKeys.add(key);
         }
       }
 
-      // 2. Cleanup existing duplicates in USERS
+      // 2. Cleanup existing duplicates in USERS (by username)
       const seenUsernames = new Set();
       for (const u of users) {
         const un = u.username.toLowerCase();
@@ -92,7 +98,7 @@ const App: React.FC = () => {
         }
       }
 
-      // 3. Ensure full roster exists
+      // 3. Ensure full roster exists and fix corrupted names
       const roster = [
         { name: 'Bladimir Acosta', username: '@Bladimir0109', role: 'Leader', title: 'Presidente', instrument: 'Dirección', avatar: 'https://picsum.photos/seed/bladimir/100/100' },
         { name: 'Ester Montilla', username: '@Ester0109', role: 'Leader', title: 'Vicepresidenta', instrument: 'Dirección', avatar: 'https://picsum.photos/seed/ester/100/100' },
@@ -109,13 +115,28 @@ const App: React.FC = () => {
 
       for (const m of roster) {
         const mLower = m.username.toLowerCase();
-        const userExists = users.some(u => u.username.toLowerCase() === mLower || u.username.toLowerCase() === mLower.replace('@', ''));
-        const memberExists = members.some(mb => mb.name === m.name);
+        const existingUser = users.find(u =>
+          u.username.toLowerCase() === mLower || u.username.toLowerCase() === mLower.replace('@', '')
+        );
+        const existingMember = members.find(mb =>
+          (mb.username && mb.username.toLowerCase() === mLower) || normalize(mb.name) === normalize(m.name)
+        );
 
-        if (!userExists) {
+        if (!existingUser) {
           try { await addDoc(collection(db, COLLECTIONS.USERS), { ...m, password: 'password123', timestamp: serverTimestamp() }); } catch (e) { }
+        } else {
+          try {
+            await updateDoc(doc(db, COLLECTIONS.USERS, existingUser.id), {
+              name: m.name,
+              role: m.role,
+              title: m.title,
+              instrument: m.instrument,
+              avatar: m.avatar,
+            });
+          } catch (e) { }
         }
-        if (!memberExists) {
+
+        if (!existingMember) {
           try {
             await addDoc(collection(db, COLLECTIONS.MEMBERS), {
               name: m.name,
@@ -125,6 +146,15 @@ const App: React.FC = () => {
               instrument: m.instrument,
               avatar: m.avatar,
               timestamp: serverTimestamp()
+            });
+          } catch (e) { }
+        } else {
+          try {
+            await updateDoc(doc(db, COLLECTIONS.MEMBERS, existingMember.id), {
+              name: m.name,
+              username: m.username,
+              instrument: m.instrument,
+              avatar: m.avatar
             });
           } catch (e) { }
         }
@@ -465,7 +495,7 @@ const App: React.FC = () => {
   };
 
 
-  const handleConfirmParticipation = async (userId: string, isConfirmed: boolean) => {
+  const handleConfirmParticipation = async (_userId: string, isConfirmed: boolean) => {
     // Current user data from auth/localStorage
     const currentUser = user;
     if (!currentUser) return;
@@ -602,5 +632,9 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
 
 
